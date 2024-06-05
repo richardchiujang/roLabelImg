@@ -3,15 +3,16 @@
 import codecs
 import os.path
 import re
-import sys
 import subprocess
-
-from functools import partial
+import sys
 from collections import defaultdict
+from functools import partial
+
+import numpy as np
 
 try:
-    from PyQt5.QtGui import *
     from PyQt5.QtCore import *
+    from PyQt5.QtGui import *
     from PyQt5.QtWidgets import *
 except ImportError:
     # needed for py3+qt4
@@ -25,21 +26,21 @@ except ImportError:
     from PyQt4.QtCore import *
 
 import resources
+
 # Add internal libs
 dir_name = os.path.abspath(os.path.dirname(__file__))
 libs_path = os.path.join(dir_name, 'libs')
 sys.path.insert(0, libs_path)
-from lib import struct, newAction, newIcon, addActions, fmtShortcut
-from shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
 from canvas import Canvas
-from zoomWidget import ZoomWidget
-from labelDialog import LabelDialog
 from colorDialog import ColorDialog
+from labelDialog import LabelDialog
 from labelFile import LabelFile, LabelFileError
+from lib import addActions, fmtShortcut, newAction, newIcon, struct
+from pascal_voc_io import XML_EXT, PascalVocReader
+from shape import DEFAULT_FILL_COLOR, DEFAULT_LINE_COLOR, Shape
 from toolBar import ToolBar
-from pascal_voc_io import PascalVocReader
-from pascal_voc_io import XML_EXT
 from ustr import ustr
+from zoomWidget import ZoomWidget
 
 __appname__ = 'roLabelImg'
 
@@ -104,6 +105,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.isEnableCreate = True
         self.isEnableCreateRo = True
+        self.isEnableAutoResize = False
 
         # Enble auto saving if pressing next
         self.autoSaving = True
@@ -253,6 +255,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         createRo = action('Create\nRotatedRBox', self.createRoShape,
                         'e', 'newRo', u'Draw a new RotatedRBox', enabled=False)
+        
+        toggleAutoResize = action('Auto Resize(off)', self.toggleAutoResize, 't', 'toggleAutoResize', u'desc', enabled=True)
+
+        resizeSelected = action('Resize\nSelected(R)', self.resizeSelected, 'r', 'resizeSelected', u'desc', enabled=True)
 
         delete = action('Delete\nRectBox', self.deleteSelectedShape,
                         'Delete', 'delete', u'Delete', enabled=False)
@@ -331,7 +337,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # Store actions for further handling.
         self.actions = struct(save=save, saveAs=saveAs, open=open, close=close,
                               lineColor=color1, fillColor=color2,
-                              create=create, createRo=createRo, delete=delete, edit=edit, copy=copy,
+                              create=create, createRo=createRo, toggleAutoResize=toggleAutoResize, resizeSelected=resizeSelected, delete=delete, edit=edit, copy=copy,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
@@ -376,7 +382,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            open, opendir, openNextImg, openPrevImg, verify, save, None, create, createRo, copy, delete, None,
+            open, opendir, openNextImg, openPrevImg, verify, save, None, create, createRo, toggleAutoResize, resizeSelected, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
@@ -600,6 +606,14 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.create.setEnabled(False)
         self.actions.createRo.setEnabled(False)
 
+    def toggleAutoResize(self):
+        self.isEnableAutoResize = not self.isEnableAutoResize
+        self.actions.toggleAutoResize.setText("Auto Resize(%s)" % ("on" if self.isEnableAutoResize else "off"))
+
+    def resizeSelected(self):
+        if self.canvas.selectedShape:
+            self.resize_shape(self.canvas.selectedShape)
+
     def toggleDrawingSensitive(self, drawing=True):
         """In the middle of drawing, toggling between modes should be disabled."""
         self.actions.editMode.setEnabled(not drawing)
@@ -819,6 +833,9 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             text = self.defaultLabelTextLine.text()
 
+        # Edit shape here
+        if self.isEnableAutoResize and self.canvas.shapes:
+            self.resize_shape(self.canvas.shapes[-1])
         # Add Chris
         self.diffcButton.setChecked(False)
         if text is not None:
@@ -837,6 +854,41 @@ class MainWindow(QMainWindow, WindowMixin):
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
+
+    def resize_shape(self, shape):
+        print('Auto resize')
+        x1, y1, x2, y2 = LabelFile.convertPoints2BndBox(((p.x(), p.y()) for p in shape.points))
+        print('bounding box', x1, y1, x2, y2)
+        bg_color = self.image_np_array[y1, x1]
+        print('bg_color', bg_color)
+        THRESHOLD = 16
+        MARGIN = 1
+            # top
+        for i in range(y1, y2 + 1):
+            if np.any(np.abs(self.image_np_array[i, x1:x2+1] - bg_color) > THRESHOLD):
+                y1 = i - MARGIN
+                print('top', y1)
+                break
+            # bottom
+        for i in range(y2, y1 - 1, -1):
+            if np.any(np.abs(self.image_np_array[i, x1:x2+1] - bg_color) > THRESHOLD):
+                y2 = i + MARGIN
+                print('bottom', y2)
+                break
+            # left
+        for i in range(x1, x2 + 1):
+            if np.any(np.abs(self.image_np_array[y1:y2+1, i] - bg_color) > THRESHOLD):
+                x1 = i - MARGIN
+                print('left', x1)
+                break
+            # right
+        for i in range(x2, x1 - 1, -1):
+            if np.any(np.abs(self.image_np_array[y1:y2+1, i] - bg_color) > THRESHOLD):
+                x2 = i + MARGIN
+                print('right', x2)
+                break
+            
+        shape.points = [QPointF(x1 + 0.5, y1 + 0.5), QPointF(x2 + 0.5, y1 + 0.5), QPointF(x2 + 0.5, y2 + 0.5), QPointF(x1 + 0.5, y2 + 0.5)]
 
     def scrollRequest(self, delta, orientation):
         units = - delta / (8 * 15)
@@ -915,6 +967,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 return False
             self.status("Loaded %s" % os.path.basename(unicodeFilePath))
             self.image = image
+            self.image_np_array = to_np_array(image)
             self.filePath = unicodeFilePath
             self.canvas.loadPixmap(QPixmap.fromImage(image))
             if self.labelFile:
@@ -1354,6 +1407,16 @@ def get_main_app(argv=[]):
     win.show()
     return app, win
 
+def to_np_array(qimage):
+    qimage = qimage.convertToFormat(4)
+
+    width = qimage.width()
+    height = qimage.height()
+
+    ptr = qimage.bits()
+    ptr.setsize(qimage.byteCount())
+    arr = np.array(ptr, dtype=np.int16).reshape(height, width, 4)[:, :, :3]  #  Copies the data
+    return arr
 
 def main(argv=[]):
     '''construct main app and run it'''
