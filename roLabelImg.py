@@ -857,6 +857,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def resize_shape(self, shape):
         print('Auto resize')
+        print(shape.__dict__)
         x1, y1, x2, y2 = LabelFile.convertPoints2BndBox(((p.x(), p.y()) for p in shape.points))
         print('bounding box', x1, y1, x2, y2)
         bg_color = self.image_np_array[y1, x1]
@@ -889,6 +890,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 break
             
         shape.points = [QPointF(x1 + 0.5, y1 + 0.5), QPointF(x2 + 0.5, y1 + 0.5), QPointF(x2 + 0.5, y2 + 0.5), QPointF(x1 + 0.5, y2 + 0.5)]
+        shape.center = QPointF((x1 + x2) / 2 + 0.5, (y1 + y2) / 2 + 0.5)
+        self.setDirty()
+        self.canvas.update()
 
     def scrollRequest(self, delta, orientation):
         units = - delta / (8 * 15)
