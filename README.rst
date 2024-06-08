@@ -1,6 +1,6 @@
 roLabelImg for text recognition
 ====================================
-Add function by Peter Junior on 2024/06/08.
+Add function by Peter Junior on 2024/06/08. (roLabelImg_multiline.py)
 
 1.Auto shrink bounding box margin to text boundary with (r).
 
