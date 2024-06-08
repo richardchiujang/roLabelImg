@@ -1,8 +1,11 @@
 roLabelImg
 ==========
 Add function by Peter Junior on 2024/06/08
+
 1.auto shrink bbox margin to text boundry with "r"
+
 2.rect and rorect box (w) auto shrink (on/off)
+
 3.multi row or line (shift) rect box
 
 .. image:: https://img.shields.io/pypi/v/labelimg.svg
