@@ -1,12 +1,12 @@
-roLabelImg
-==========
-Add function by Peter Junior on 2024/06/08
+roLabelImg for text recognition
+====================================
+Add function by Peter Junior on 2024/06/08.
 
-1.auto shrink bbox margin to text boundry with "r"
+1.Auto shrink bounding box margin to text boundary with (r).
 
-2.rect and rorect box (w) auto shrink (on/off)
+2.Rectangular (w) and rotated rectangular (e) box auto shrink (on/off) with respect to width and high.
 
-3.multi row or line (shift) rect box
+3.Multi-row (f) or multi-line (hold shift) auto rectangular box.
 
 .. image:: https://img.shields.io/pypi/v/labelimg.svg
         :target: https://pypi.python.org/pypi/labelimg
