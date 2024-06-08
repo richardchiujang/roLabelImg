@@ -1,18 +1,18 @@
-roLabelImg for text recognition
-====================================
-Add function by Peter Junior on 2024/06/08. (roLabelImg_multiline.py)
+roLabelImg for text recognition 特別修改為 標註文字框 的功能
+=======================================================================
+Add function by Peter Junior on 2024/06/08. (roLabelImg_multiline.py) 新增功能
 
-1.Auto shrink bounding box margin to text boundary with (r).
+1.Auto shrink bounding box margin to text boundary with (r). 使用r鍵可以將所在文字框縮小到文字大小(邊界為設定值)
 
-2.Rectangular (w) and rotated rectangular (e) box auto shrink (on/off) with respect to width and high.
+2.Rectangular (w) and rotated rectangular (e) box auto shrink (on/off) with respect to width and high. 標註(文字框)時會自動縮小到文字範圍
 
-3.Multi-row (f) or multi-line (hold shift) auto rectangular box.
+3.Multi-row (f) or multi-line (hold shift) auto rectangular box. 一次標註多行(列)，按f鍵，直式文字按住shift鍵拖放
 
 .. image:: https://hackmd.io/_uploads/HJY2X_-rA.png 
 
 .. image:: https://hackmd.io/_uploads/S1ngVubBC.png
 
-https://youtu.be/yNg8692xE30
+https://youtu.be/yNg8692xE30    一次標註多行(列)請看此連結
 
 .. image:: https://img.shields.io/pypi/v/labelimg.svg
         :target: https://pypi.python.org/pypi/labelimg
