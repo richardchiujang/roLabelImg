@@ -8,8 +8,8 @@ Add function by Peter Junior on 2024/06/08. (roLabelImg_multiline.py)
 
 3.Multi-row (f) or multi-line (hold shift) auto rectangular box.
 
-https://hackmd.io/_uploads/HJY2X_-rA.png
-https://hackmd.io/_uploads/S1ngVubBC.png
+:target: https://hackmd.io/_uploads/HJY2X_-rA.png
+:target: https://hackmd.io/_uploads/S1ngVubBC.png
 
 .. image:: https://img.shields.io/pypi/v/labelimg.svg
         :target: https://pypi.python.org/pypi/labelimg
